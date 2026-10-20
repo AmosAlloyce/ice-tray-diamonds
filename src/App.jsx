@@ -65,9 +65,7 @@ export default function App() {
   // ─── PRELOADER & CANVAS REFS ───
   const [loadedCount, setLoadedCount] = useState(0);
   const [isReady, setIsReady] = useState(false);
-  const [hotspotsEnabled, setHotspotsEnabled] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(false);
-  const [activeAct, setActiveAct] = useState(1);
 
   const canvasRef = useRef(null);
   const flipbookRef = useRef(null);
@@ -380,7 +378,6 @@ export default function App() {
         lastTickedFrame = displayedFrame;
         playHorologicalTick(displayedFrame);
       }
-      setActiveAct(progress < 0.5 ? 1 : 2);
     }
 
     function updateCopyCallout(el, progress, center, halfWidth) {
@@ -679,15 +676,6 @@ export default function App() {
         <div className="nav-actions">
           <button
             type="button"
-            className={`nav-pill-btn ${hotspotsEnabled ? 'active' : ''}`}
-            onClick={() => setHotspotsEnabled((v) => !v)}
-            title="Toggle Interactive Spatial Hotspots on Canvas"
-          >
-            <Crosshair size={13} />
-            <span>Pins</span>
-          </button>
-          <button
-            type="button"
             className={`nav-pill-btn ${soundEnabled ? 'active' : ''}`}
             onClick={() => setSoundEnabled((v) => !v)}
             title="Toggle Horological Audio Feedback"
@@ -717,31 +705,6 @@ export default function App() {
           />
           <div className="canvas-vignette" />
 
-          {/* Interactive Spatial Hotspots Layer */}
-          <div className={`spatial-hotspots-layer ${hotspotsEnabled ? '' : 'hidden'}`}>
-            {pieces.map((piece) => {
-              const coords = activeAct === 1 ? piece.hotspots?.act1 : piece.hotspots?.act2;
-              if (!coords) return null;
-              return (
-                <button
-                  key={piece.id}
-                  type="button"
-                  className="spatial-pin"
-                  style={{
-                    left: `${(coords.x * 100).toFixed(1)}%`,
-                    top: `${(coords.y * 100).toFixed(1)}%`,
-                  }}
-                  onClick={() => setDrawerPiece(piece)}
-                >
-                  <span className="spatial-pin-dot" />
-                  <span className="spatial-pin-code">{piece.code}</span>
-                  <span className="spatial-pin-label">{piece.name}</span>
-                  <span className="spatial-pin-carat">{piece.baseCaratWeight.toFixed(2)} ct</span>
-                </button>
-              );
-            })}
-          </div>
-
           {/* Large Serif Headline at Top of Scroll */}
           <div className="hero-overlay" id="hero-overlay" ref={heroOverlayRef}>
             <div className="hero-header-group">
@@ -752,7 +715,7 @@ export default function App() {
               </p>
             </div>
             <div className="scroll-cue">
-              <span>Scroll to Deconstruct · Click Any Piece to Inspect</span>
+              <span>Scroll to Deconstruct</span>
               <div className="scroll-cue-line" />
             </div>
           </div>
@@ -781,24 +744,8 @@ export default function App() {
             </div>
           </div>
 
-          {/* Bottom Interactive Piece Dock + Frame HUD */}
-          <div className="canvas-bottom-bar">
-            <div className="piece-quick-dock" role="toolbar" aria-label="Jump to piece explosion">
-              {pieces.map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  className={`dock-btn ${selectedPieceSlug === p.slug ? 'active' : ''}`}
-                  onClick={() => {
-                    setSelectedPieceSlug(p.slug);
-                    scrollToProgress(p.hotspots?.optimalScrollPct || 0.25);
-                  }}
-                >
-                  {p.code}. {p.name.split(' ').slice(-1)[0]}
-                </button>
-              ))}
-            </div>
-
+          {/* Subtle Frame HUD */}
+          <div className="canvas-bottom-bar" style={{ justifyContent: 'flex-end' }}>
             <div className="scroll-hud">
               <span id="hud-frame" ref={hudFrameRef}>
                 FRAME 001 / 384
