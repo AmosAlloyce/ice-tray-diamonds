@@ -18,15 +18,18 @@ export function createStandaloneApp(options = {}) {
   app.use('/ice-tray-diamonds/api/v1', apiRouter);
 
   // Serve optical frame sequence from /frames
-  app.use(
-    ['/frames', '/ice-tray-diamonds/frames'],
-    express.static(path.join(ROOT, 'frames'), { maxAge: '7d' }),
-  );
+  app.use('/frames', express.static(path.join(ROOT, 'frames'), { maxAge: '7d' }));
+  app.use('/ice-tray-diamonds/frames', express.static(path.join(ROOT, 'frames'), { maxAge: '7d' }));
+
+  // Serve 2K studio, on-skin editorial, vault & microscope photography from /media
+  app.use('/media', express.static(path.join(ROOT, 'media'), { maxAge: '7d' }));
+  app.use('/ice-tray-diamonds/media', express.static(path.join(ROOT, 'media'), { maxAge: '7d' }));
 
   // Serve built Vite bundle if present
   const distDir = path.join(ROOT, 'dist');
   if (existsSync(distDir)) {
-    app.use(['/', '/ice-tray-diamonds'], express.static(distDir, { maxAge: '1h' }));
+    app.use('/ice-tray-diamonds', express.static(distDir, { maxAge: '1h' }));
+    app.use(express.static(distDir, { maxAge: '1h' }));
   }
 
   app.get(['/', '/ice-tray-diamonds', '/ice-tray-diamonds/'], (req, res) => {

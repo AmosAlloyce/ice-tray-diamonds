@@ -47,6 +47,100 @@ function getFrameUrl(index1Based) {
   return `${prefix}/frame-${pad3(index1Based)}.jpg`;
 }
 
+// Resolve 2K studio / scale / vault / microscope media path relative to page root
+function getMediaUrl(filename) {
+  const pathName = window.location.pathname;
+  const prefix = pathName.startsWith('/ice-tray-diamonds') ? '/ice-tray-diamonds/media' : './media';
+  return `${prefix}/${filename}`;
+}
+
+export const ATELIER_GALLERY_PLATES = [
+  {
+    id: 'plate-vault',
+    file: 'vault-box.jpg',
+    tag: 'COMPLETE PARURE · PRESENTATION VAULT',
+    title: 'Obsidian Presentation Chest — All 5 Signature Pieces',
+    caption: 'Hand-lacquered matte obsidian vault case lined in charcoal velvet housing the complete 24.80 ct suite.',
+  },
+  {
+    id: 'plate-01',
+    file: 'piece-01-bracelet.jpg',
+    tag: 'PIECE 01 / 05 · 2K STUDIO MACRO',
+    title: 'Glacial Tennis Bracelet (11.20 ct)',
+    caption: '44 matched round brilliants suspended in a 142-part cryo-forged 950 platinum articulating chassis.',
+  },
+  {
+    id: 'plate-02',
+    file: 'piece-02-solitaire.jpg',
+    tag: 'PIECE 02 / 05 · 2K STUDIO MACRO',
+    title: 'Cathedral Solitaire Ring (4.65 ct)',
+    caption: '3.50 ct Type IIa D-Flawless center solitaire elevated above a micro-pavé structural gallery.',
+  },
+  {
+    id: 'plate-03',
+    file: 'piece-03-eternity.jpg',
+    tag: 'PIECE 03 / 05 · 2K STUDIO MACRO',
+    title: 'Full-Circle Eternity Band (2.40 ct)',
+    caption: '28 French-set diamonds forming an unbroken 360-degree orbital ring of spectral dispersion.',
+  },
+  {
+    id: 'plate-04',
+    file: 'piece-04-earrings.jpg',
+    tag: 'PIECE 04 / 05 · 2K STUDIO MACRO',
+    title: 'Cascade Pear Drop Earrings (3.85 ct)',
+    caption: 'Matched pear-cut terminal drops suspended below articulated round brilliant columns.',
+  },
+  {
+    id: 'plate-05',
+    file: 'piece-05-medallion.jpg',
+    tag: 'PIECE 05 / 05 · 2K STUDIO MACRO',
+    title: 'Articulated Halo Medallion (2.70 ct)',
+    caption: 'Floating cluster core enclosed within a concentric diamond halo and diamond-cut platinum chain.',
+  },
+  {
+    id: 'plate-scale-wrist',
+    file: 'scale-wrist.jpg',
+    tag: 'HUMAN SCALE · WRist DRAPE (165MM)',
+    title: 'On-Wrist Proportion — Glacial Tennis Bracelet',
+    caption: 'Editorial daylight scale reference showing 4.10 mm calibrated links draped fluidly against the wrist.',
+  },
+  {
+    id: 'plate-scale-hand',
+    file: 'scale-hand.jpg',
+    tag: 'HUMAN SCALE · FINGER STACK',
+    title: 'On-Hand Proportion — Solitaire & Eternity Band Stack',
+    caption: 'The 3.50 ct Cathedral Solitaire worn flush alongside the French-set Full-Circle Eternity Band.',
+  },
+  {
+    id: 'plate-scale-portrait',
+    file: 'scale-portrait.jpg',
+    tag: 'HUMAN SCALE · EAR & NECKLINE',
+    title: 'On-Skin Proportion — Cascade Drop Earrings & Halo Medallion',
+    caption: 'Acoustic drop movement and collarbone framing under natural salon illumination.',
+  },
+  {
+    id: 'plate-metal-obsidian',
+    file: 'metal-obsidian.jpg',
+    tag: 'BESPOKE METALLURGY · AU750_OBS',
+    title: '18k Obsidian Black-Rhodium Claw Setting Macro',
+    caption: 'PVD-bonded ruthenium-rhodium finish creating extreme dark architectural contrast against D-color fire.',
+  },
+  {
+    id: 'plate-engraving',
+    file: 'engraving-macro.jpg',
+    tag: 'BESPOKE HALLMARK · 5-MICRON LASER',
+    title: 'Interior Gallery Laser Micro-Inscription',
+    caption: 'High-precision serif hallmarking inside the comfort-radius inner shank.',
+  },
+  {
+    id: 'plate-gia-microscope',
+    file: 'gia-girdle-microscope.jpg',
+    tag: '150× OPTICAL VERIFICATION · 100 µm',
+    title: 'Gemological Microscope View of Laser-Inscribed Diamond Girdle',
+    caption: 'Every primary diamond girdle is cold-laser inscribed with its unique GIA report and Atelier serial.',
+  },
+];
+
 // Persistent session token for 15-minute edition holds
 function getSessionToken() {
   try {
@@ -89,6 +183,11 @@ export default function App() {
   const [editions, setEditions] = useState([]);
   const [certificates, setCertificates] = useState([]);
   const [selectedPieceSlug, setSelectedPieceSlug] = useState('glacial-tennis-bracelet');
+  const [pieceViewMode, setPieceViewMode] = useState('STUDIO'); // 'STUDIO' | 'SCALE' | 'GIRDLE'
+  const [configVisualMode, setConfigVisualMode] = useState('SELECTION'); // 'SELECTION' | 'SCALE' | 'METALLURGY' | 'ENGRAVING'
+  const [suitePreviewFile, setSuitePreviewFile] = useState('vault-box.jpg');
+  const [selectedCertId, setSelectedCertId] = useState('lot-01');
+  const [lightboxPlate, setLightboxPlate] = useState(null);
   const [drawerPiece, setDrawerPiece] = useState(null);
   const [adminOpen, setAdminOpen] = useState(false);
   const [adminData, setAdminData] = useState(null);
@@ -486,6 +585,15 @@ export default function App() {
           smoothProgress = targetProgress;
           needsResize = true;
           scheduleTick();
+
+          // Pre-warm the 12 2K studio, scale, vault & microscope plates in the background
+          setTimeout(() => {
+            ATELIER_GALLERY_PLATES.forEach((plate) => {
+              const mediaImg = new Image();
+              mediaImg.decoding = 'async';
+              mediaImg.src = getMediaUrl(plate.file);
+            });
+          }, 150);
         }
       };
 
@@ -631,7 +739,75 @@ export default function App() {
 
   const loadPct = Math.round((loadedCount / TOTAL_FRAMES) * 100);
   const activePiece = pieces.find((p) => p.slug === selectedPieceSlug) || pieces[0];
+  const configuredPiece = pieces.find((p) => p.slug === configForm.pieceSlug) || activePiece || pieces[0];
+  const activeCert = certificates.find((c) => c.id === selectedCertId) || certificates[0];
   const availableCount = editions.filter((e) => e.status === 'AVAILABLE').length;
+
+  // Compute the active image & caption for the Anatomical Piece Spotlight stage
+  const spotlightImageFile =
+    pieceViewMode === 'SCALE'
+      ? activePiece?.media?.scaleImage || 'scale-wrist.jpg'
+      : pieceViewMode === 'GIRDLE'
+        ? 'gia-girdle-microscope.jpg'
+        : activePiece?.media?.studioImage || 'piece-01-bracelet.jpg';
+
+  const spotlightImageCaption =
+    pieceViewMode === 'SCALE'
+      ? activePiece?.media?.scaleCaption || 'Human Scale Reference'
+      : pieceViewMode === 'GIRDLE'
+        ? `150× Gemological Microscope Verification · Girdle ID: ${activePiece?.diamondLots?.[0]?.girdleInscription || 'GIA 2267849102'}`
+        : activePiece?.media?.studioCaption || '2K Studio Macro';
+
+  // Compute the active image & caption for the Bespoke Configurator stage
+  const configStageData = (() => {
+    if (configVisualMode === 'ENGRAVING') {
+      return {
+        file: 'engraving-macro.jpg',
+        badge: '5-MICRON LASER HALLMARK PREVIEW',
+        caption: `Interior Comfort-Radius Gallery · Inscribed: “${configForm.engravingText || 'ICE TRAY · GENEVA'}”`,
+      };
+    }
+    if (configVisualMode === 'METALLURGY') {
+      if (configForm.metalAlloy === 'AU750_OBS') {
+        return {
+          file: 'metal-obsidian.jpg',
+          badge: 'AU750_OBS · BLACK-RHODIUM MACRO',
+          caption: '18k Obsidian Black-Rhodium PVD Prong Architecture against D-Flawless Fire',
+        };
+      }
+      return {
+        file: configuredPiece?.media?.studioImage || 'piece-02-solitaire.jpg',
+        badge: `${configForm.metalAlloy} · SPECULAR CHASSIS`,
+        caption: `${liveQuote?.metalAlloy?.name || 'Cryo-Forged 950 Platinum'} Mirror-Lapped Gallery`,
+      };
+    }
+    if (configVisualMode === 'SCALE') {
+      return {
+        file: configuredPiece?.media?.scaleImage || 'scale-hand.jpg',
+        badge: configuredPiece?.media?.scaleLabel || 'ON-SKIN PROPORTION',
+        caption: configuredPiece?.media?.scaleCaption || 'Natural Daylight Human Scale Reference',
+      };
+    }
+    // Default 'SELECTION' mode
+    if (configForm.scope === 'FULL_SUITE') {
+      return {
+        file: suitePreviewFile || 'vault-box.jpg',
+        badge:
+          suitePreviewFile === 'vault-box.jpg'
+            ? 'COMPLETE 5-PIECE PARURE · OBSIDIAN VAULT CHEST'
+            : 'SUITE COMPONENT STUDIO PLATE',
+        caption:
+          suitePreviewFile === 'vault-box.jpg'
+            ? 'Bespoke Matte-Black Obsidian Vault Case housing all 5 signature pieces (24.80 ct total)'
+            : 'Click any piece thumbnail below to inspect individual silhouettes included in the suite',
+      };
+    }
+    return {
+      file: configuredPiece?.media?.studioImage || 'piece-01-bracelet.jpg',
+      badge: `PIECE ${configuredPiece?.code || '01'} · 2K STUDIO PLATE`,
+      caption: configuredPiece?.media?.studioCaption || '2K Studio Macro',
+    };
+  })();
 
   return (
     <>
@@ -791,7 +967,7 @@ export default function App() {
               </div>
             </div>
 
-            {/* Interactive 5-Piece Selector Tabs */}
+            {/* Interactive 5-Piece Selector Tabs with 2K Studio Thumbnails */}
             {pieces.length > 0 && (
               <>
                 <div className="piece-tabs" role="tablist">
@@ -804,6 +980,17 @@ export default function App() {
                       className={`piece-tab-btn ${selectedPieceSlug === piece.slug ? 'active' : ''}`}
                       onClick={() => setSelectedPieceSlug(piece.slug)}
                     >
+                      <div className="piece-tab-thumb-wrap">
+                        <img
+                          src={getMediaUrl(piece.media?.studioImage || 'piece-01-bracelet.jpg')}
+                          alt={piece.name}
+                          className="piece-tab-thumb"
+                          loading="lazy"
+                        />
+                        <span className="piece-tab-price-pill">
+                          ${piece.basePriceUsd.toLocaleString()}
+                        </span>
+                      </div>
                       <span className="piece-tab-code">PIECE {piece.code} / 05</span>
                       <span className="piece-tab-name">{piece.name}</span>
                       <span className="piece-tab-meta">
@@ -849,7 +1036,7 @@ export default function App() {
                         </div>
                       </div>
 
-                      <div className="piece-spotlight-actions">
+                      <div className="piece-spotlight-actions" style={{ marginBottom: '1.75rem' }}>
                         <button
                           type="button"
                           className="btn-outline-ice"
@@ -867,6 +1054,7 @@ export default function App() {
                               scope: 'SINGLE_PIECE',
                               pieceSlug: activePiece.slug,
                             }));
+                            setConfigVisualMode('SELECTION');
                             document.getElementById('acquire')?.scrollIntoView({ behavior: 'smooth' });
                           }}
                         >
@@ -874,36 +1062,156 @@ export default function App() {
                           <span>Configure {activePiece.name}</span>
                         </button>
                       </div>
+
+                      <div>
+                        <div className="config-label" style={{ marginBottom: '0.75rem' }}>
+                          Registered GIA Diamond Parcels in Piece {activePiece.code}
+                        </div>
+                        {(activePiece.diamondLots || []).map((lot) => (
+                          <div
+                            key={lot.id}
+                            style={{
+                              padding: '0.9rem 1rem',
+                              border: '1px solid rgba(255,255,255,0.1)',
+                              background: 'rgba(255,255,255,0.02)',
+                              marginBottom: '0.65rem',
+                            }}
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                              <span className="gia-report-num">{lot.giaReportNumber}</span>
+                              <span className="gia-verified-pill">
+                                {lot.colorGrade} / {lot.clarityGrade}
+                              </span>
+                            </div>
+                            <div style={{ fontFamily: 'var(--serif)', fontSize: '1.08rem', marginBottom: '0.2rem' }}>
+                              {lot.lotTitle}
+                            </div>
+                            <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                              {lot.caratWeight.toFixed(2)} ct ({lot.stoneCount} stones) · {lot.cutShape} · {lot.originMine}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
 
-                    <div>
-                      <div className="config-label" style={{ marginBottom: '0.85rem' }}>
-                        Registered GIA Diamond Parcels in Piece {activePiece.code}
-                      </div>
-                      {(activePiece.diamondLots || []).map((lot) => (
-                        <div
-                          key={lot.id}
-                          style={{
-                            padding: '1rem',
-                            border: '1px solid rgba(255,255,255,0.1)',
-                            background: 'rgba(255,255,255,0.02)',
-                            marginBottom: '0.75rem',
-                          }}
-                        >
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
-                            <span className="gia-report-num">{lot.giaReportNumber}</span>
-                            <span className="gia-verified-pill">
-                              {lot.colorGrade} / {lot.clarityGrade}
-                            </span>
-                          </div>
-                          <div style={{ fontFamily: 'var(--serif)', fontSize: '1.1rem', marginBottom: '0.25rem' }}>
-                            {lot.lotTitle}
-                          </div>
-                          <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>
-                            {lot.caratWeight.toFixed(2)} ct ({lot.stoneCount} stones) · {lot.cutShape} · {lot.originMine}
-                          </div>
+                    {/* Right Column: Interactive 2K Studio Macro & On-Skin Human Scale Stage */}
+                    <div className="piece-visual-column">
+                      <div className="visual-stage-header">
+                        <span className="config-label">Optical Inspection Stage (2K)</span>
+                        <div className="visual-mode-pills" role="group" aria-label="Piece Visual Mode">
+                          <button
+                            type="button"
+                            className={`visual-pill-btn ${pieceViewMode === 'STUDIO' ? 'active' : ''}`}
+                            onClick={() => setPieceViewMode('STUDIO')}
+                          >
+                            2K Studio Macro
+                          </button>
+                          <button
+                            type="button"
+                            className={`visual-pill-btn ${pieceViewMode === 'SCALE' ? 'active' : ''}`}
+                            onClick={() => setPieceViewMode('SCALE')}
+                          >
+                            {activePiece.media?.scaleLabel || 'On-Skin Scale'}
+                          </button>
+                          <button
+                            type="button"
+                            className={`visual-pill-btn ${pieceViewMode === 'GIRDLE' ? 'active' : ''}`}
+                            onClick={() => setPieceViewMode('GIRDLE')}
+                          >
+                            150× GIA Girdle
+                          </button>
                         </div>
-                      ))}
+                      </div>
+
+                      <div
+                        className={`piece-visual-viewport ${pieceViewMode === 'SCALE' ? 'portrait-mode' : ''}`}
+                        onClick={() =>
+                          setLightboxPlate({
+                            file: spotlightImageFile,
+                            tag: `PIECE ${activePiece.code} / 05 · ${pieceViewMode} VIEW`,
+                            title: `${activePiece.code}. ${activePiece.name}`,
+                            caption: spotlightImageCaption,
+                          })
+                        }
+                        title="Click to inspect full 2K plate"
+                      >
+                        <img
+                          src={getMediaUrl(spotlightImageFile)}
+                          alt={`${activePiece.name} — ${pieceViewMode}`}
+                          className="piece-visual-img"
+                        />
+                        <div className="visual-viewport-overlay-top">
+                          <span className="visual-plate-tag">
+                            {pieceViewMode === 'SCALE'
+                              ? `HUMAN SCALE · ${activePiece.media?.scaleLabel?.toUpperCase()}`
+                              : pieceViewMode === 'GIRDLE'
+                                ? '150× GEMOLOGICAL MICROSCOPE'
+                                : `PIECE ${activePiece.code} · 2K STUDIO PLATE`}
+                          </span>
+                          <span className="visual-zoom-pill">
+                            <ArrowUpRight size={12} />
+                            <span>2K Loupe</span>
+                          </span>
+                        </div>
+                        {pieceViewMode === 'GIRDLE' && (
+                          <div className="girdle-live-overlay">
+                            <span>LASER INSCRIPTION VERIFIED:</span>
+                            <strong>{activePiece.diamondLots?.[0]?.girdleInscription || 'GIA 2267849102 · ITD-01'}</strong>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="piece-visual-caption-bar">
+                        <span>{spotlightImageCaption}</span>
+                        <button
+                          type="button"
+                          className="visual-link-btn"
+                          onClick={() =>
+                            setLightboxPlate({
+                              file: spotlightImageFile,
+                              tag: `PIECE ${activePiece.code} / 05 · ${pieceViewMode} VIEW`,
+                              title: `${activePiece.code}. ${activePiece.name}`,
+                              caption: spotlightImageCaption,
+                            })
+                          }
+                        >
+                          Open 12-Plate Gallery
+                        </button>
+                      </div>
+
+                      {/* Dual Thumbnail Strip: Studio vs On-Skin Scale */}
+                      <div className="piece-dual-thumbs">
+                        <button
+                          type="button"
+                          className={`dual-thumb-card ${pieceViewMode === 'STUDIO' ? 'active' : ''}`}
+                          onClick={() => setPieceViewMode('STUDIO')}
+                        >
+                          <img
+                            src={getMediaUrl(activePiece.media?.studioImage || 'piece-01-bracelet.jpg')}
+                            alt="2K Studio Macro"
+                          />
+                          <div>
+                            <span className="dual-thumb-tag">01 · Studio Plate</span>
+                            <strong className="dual-thumb-title">Obsidian Slate Macro</strong>
+                          </div>
+                        </button>
+                        <button
+                          type="button"
+                          className={`dual-thumb-card ${pieceViewMode === 'SCALE' ? 'active' : ''}`}
+                          onClick={() => setPieceViewMode('SCALE')}
+                        >
+                          <img
+                            src={getMediaUrl(activePiece.media?.scaleImage || 'scale-wrist.jpg')}
+                            alt="On-Skin Human Scale"
+                          />
+                          <div>
+                            <span className="dual-thumb-tag">02 · Human Scale</span>
+                            <strong className="dual-thumb-title">
+                              {activePiece.media?.scaleLabel || 'On-Skin Proportion'}
+                            </strong>
+                          </div>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -1015,15 +1323,22 @@ export default function App() {
                     <button
                       type="button"
                       className={`config-choice-btn ${configForm.scope === 'FULL_SUITE' ? 'active' : ''}`}
-                      onClick={() => setConfigForm((f) => ({ ...f, scope: 'FULL_SUITE' }))}
+                      onClick={() => {
+                        setConfigForm((f) => ({ ...f, scope: 'FULL_SUITE' }));
+                        setSuitePreviewFile('vault-box.jpg');
+                        setConfigVisualMode('SELECTION');
+                      }}
                     >
                       <span className="choice-title">Complete 5-Piece Parure</span>
-                      <span className="choice-sub">24.80 ct · All 5 Signature Pieces · $48,500 Base</span>
+                      <span className="choice-sub">24.80 ct · All 5 Signature Pieces in Vault Chest · $48,500 Base</span>
                     </button>
                     <button
                       type="button"
                       className={`config-choice-btn ${configForm.scope === 'SINGLE_PIECE' ? 'active' : ''}`}
-                      onClick={() => setConfigForm((f) => ({ ...f, scope: 'SINGLE_PIECE' }))}
+                      onClick={() => {
+                        setConfigForm((f) => ({ ...f, scope: 'SINGLE_PIECE' }));
+                        setConfigVisualMode('SELECTION');
+                      }}
                     >
                       <span className="choice-title">Individual Signature Piece</span>
                       <span className="choice-sub">Acquire a single piece from the collection</span>
@@ -1035,7 +1350,10 @@ export default function App() {
                       <select
                         className="atelier-select"
                         value={configForm.pieceSlug}
-                        onChange={(e) => setConfigForm((f) => ({ ...f, pieceSlug: e.target.value }))}
+                        onChange={(e) => {
+                          setConfigForm((f) => ({ ...f, pieceSlug: e.target.value }));
+                          setConfigVisualMode('SELECTION');
+                        }}
                       >
                         {pieces.map((p) => (
                           <option key={p.id} value={p.slug}>
@@ -1051,7 +1369,7 @@ export default function App() {
                 <div className="config-group">
                   <div className="config-label-row">
                     <span className="config-label">02. Precious Metallurgy</span>
-                    <span className="config-hint">Cryo-hardened chassis</span>
+                    <span className="config-hint">Cryo-hardened chassis · Live optical preview</span>
                   </div>
                   <div className="config-option-grid">
                     {(suiteData?.options?.alloys || []).map((alloy) => (
@@ -1059,13 +1377,40 @@ export default function App() {
                         key={alloy.code}
                         type="button"
                         className={`config-choice-btn ${configForm.metalAlloy === alloy.code ? 'active' : ''}`}
-                        onClick={() => setConfigForm((f) => ({ ...f, metalAlloy: alloy.code }))}
+                        onClick={() => {
+                          setConfigForm((f) => ({ ...f, metalAlloy: alloy.code }));
+                          if (alloy.code === 'AU750_OBS') {
+                            setConfigVisualMode('METALLURGY');
+                          } else if (configVisualMode === 'METALLURGY') {
+                            setConfigVisualMode('SELECTION');
+                          }
+                        }}
                       >
                         <span className="choice-title">{alloy.name}</span>
                         <span className="choice-sub">{alloy.description}</span>
                       </button>
                     ))}
                   </div>
+                  {configForm.metalAlloy === 'AU750_OBS' && (
+                    <div className="config-inline-visual-strip">
+                      <img
+                        src={getMediaUrl('metal-obsidian.jpg')}
+                        alt="18k Obsidian Black-Rhodium Claw Setting Macro"
+                        onClick={() =>
+                          setLightboxPlate(
+                            ATELIER_GALLERY_PLATES.find((p) => p.file === 'metal-obsidian.jpg'),
+                          )
+                        }
+                      />
+                      <div>
+                        <span className="gia-report-num">AU750_OBS · BESPOKE DARK METALLURGY</span>
+                        <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                          Sub-micron PVD obsidian ruthenium-rhodium coating applied to the claw tips and gallery rails
+                          to eliminate metal reflection and amplify D-color diamond contrast.
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Diamond Grade Tier */}
@@ -1151,7 +1496,7 @@ export default function App() {
                 <div className="config-group">
                   <div className="config-label-row">
                     <span className="config-label">05. Interior Gallery Laser Micro-Inscription</span>
-                    <span className="config-hint">Up to 36 characters</span>
+                    <span className="config-hint">Up to 36 characters · 5-micron depth</span>
                   </div>
                   <input
                     type="text"
@@ -1159,18 +1504,38 @@ export default function App() {
                     className="atelier-input"
                     placeholder="Enter custom motto, initials, or date..."
                     value={configForm.engravingText}
-                    onChange={(e) => setConfigForm((f) => ({ ...f, engravingText: e.target.value }))}
+                    onFocus={() => setConfigVisualMode('ENGRAVING')}
+                    onChange={(e) => {
+                      setConfigForm((f) => ({ ...f, engravingText: e.target.value }));
+                      setConfigVisualMode('ENGRAVING');
+                    }}
                   />
-                  <div className="engraving-preview-bar">
-                    <span className="engraving-preview-label">Hallmark Preview</span>
-                    <span className="engraving-preview-text">
-                      {configForm.engravingText || 'ICE TRAY · GENEVA'}
-                    </span>
+                  <div className="engraving-visual-preview-card">
+                    <img
+                      src={getMediaUrl('engraving-macro.jpg')}
+                      alt="Interior Gallery Laser-Engraved Ring Shank Macro"
+                      className="engraving-macro-thumb"
+                      onClick={() =>
+                        setLightboxPlate(
+                          ATELIER_GALLERY_PLATES.find((p) => p.file === 'engraving-macro.jpg'),
+                        )
+                      }
+                      title="Click to inspect 2K laser hallmark macro"
+                    />
+                    <div className="engraving-preview-content">
+                      <span className="engraving-preview-label">Live Inner Shank Hallmark Preview</span>
+                      <span className="engraving-preview-text">
+                        {configForm.engravingText || 'ICE TRAY · GENEVA'}
+                      </span>
+                      <span className="engraving-preview-sub">
+                        Pt950 · N° {String(selectedEdition).padStart(2, '0')}/10 · 24.80 CT
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Right Column: Live Server Quote + Acquisition Form */}
+              {/* Right Column: Live Visual Stage + Live Server Quote + Acquisition Form */}
               <div className="valuation-card">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
                   <span className="nav-status-pill">
@@ -1179,6 +1544,101 @@ export default function App() {
                   <span style={{ fontSize: '0.68rem', color: 'var(--text-subtle)', letterSpacing: '0.14em' }}>
                     LIVE API VALUATION
                   </span>
+                </div>
+
+                {/* Live Interactive Visual Stage inside the Checkout / Valuation Column */}
+                <div className="config-visual-stage">
+                  <div className="config-stage-tabs" role="tablist">
+                    <button
+                      type="button"
+                      className={`visual-pill-btn ${configVisualMode === 'SELECTION' ? 'active' : ''}`}
+                      onClick={() => setConfigVisualMode('SELECTION')}
+                    >
+                      {configForm.scope === 'FULL_SUITE' ? 'Vault Chest' : 'Studio Plate'}
+                    </button>
+                    <button
+                      type="button"
+                      className={`visual-pill-btn ${configVisualMode === 'SCALE' ? 'active' : ''}`}
+                      onClick={() => setConfigVisualMode('SCALE')}
+                    >
+                      On-Skin Scale
+                    </button>
+                    <button
+                      type="button"
+                      className={`visual-pill-btn ${configVisualMode === 'METALLURGY' ? 'active' : ''}`}
+                      onClick={() => setConfigVisualMode('METALLURGY')}
+                    >
+                      Alloy Finish
+                    </button>
+                    <button
+                      type="button"
+                      className={`visual-pill-btn ${configVisualMode === 'ENGRAVING' ? 'active' : ''}`}
+                      onClick={() => setConfigVisualMode('ENGRAVING')}
+                    >
+                      Laser Hallmark
+                    </button>
+                  </div>
+
+                  <div
+                    className={`config-stage-viewport ${configVisualMode === 'SCALE' ? 'portrait-crop' : ''}`}
+                    onClick={() =>
+                      setLightboxPlate({
+                        file: configStageData.file,
+                        tag: configStageData.badge,
+                        title: liveQuote?.title || 'The Complete Ice Tray Parure',
+                        caption: configStageData.caption,
+                      })
+                    }
+                    title="Click to open full 2K plate inspection"
+                  >
+                    <img
+                      src={getMediaUrl(configStageData.file)}
+                      alt={configStageData.badge}
+                      className="config-stage-img"
+                    />
+                    <div className="visual-viewport-overlay-top">
+                      <span className="visual-plate-tag">{configStageData.badge}</span>
+                      <span className="visual-zoom-pill">
+                        <ArrowUpRight size={11} />
+                        <span>2K</span>
+                      </span>
+                    </div>
+                    {configVisualMode === 'ENGRAVING' && (
+                      <div className="config-stage-engraving-badge">
+                        <span>CUSTOM SHANK INSCRIPTION:</span>
+                        <strong>“{configForm.engravingText || 'ICE TRAY · GENEVA'}”</strong>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="config-stage-caption">{configStageData.caption}</div>
+
+                  {/* Quick 6-Plate Selector Strip when Full Suite is active */}
+                  {configForm.scope === 'FULL_SUITE' && configVisualMode === 'SELECTION' && (
+                    <div className="suite-mini-strip" aria-label="Suite Component Quick Switcher">
+                      <button
+                        type="button"
+                        className={`suite-mini-thumb ${suitePreviewFile === 'vault-box.jpg' ? 'active' : ''}`}
+                        onClick={() => setSuitePreviewFile('vault-box.jpg')}
+                        title="Obsidian Vault Presentation Chest (All 5 Pieces)"
+                      >
+                        <img src={getMediaUrl('vault-box.jpg')} alt="Vault Chest" />
+                        <span>Vault</span>
+                      </button>
+                      {pieces.map((p) => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          className={`suite-mini-thumb ${suitePreviewFile === p.media?.studioImage ? 'active' : ''}`}
+                          onClick={() => setSuitePreviewFile(p.media?.studioImage || 'piece-01-bracelet.jpg')}
+                          title={`${p.code}. ${p.name}`}
+                        >
+                          <img src={getMediaUrl(p.media?.studioImage || 'piece-01-bracelet.jpg')} alt={p.name} />
+                          <span>{p.code}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <h3 className="piece-spotlight-title" style={{ fontSize: '1.55rem', marginBottom: '0.35rem' }}>
@@ -1326,6 +1786,68 @@ export default function App() {
               </p>
             </div>
 
+            {/* 150x Gemological Microscope Girdle Inscription Inspector */}
+            {activeCert && (
+              <div className="gia-microscope-banner">
+                <div
+                  className="gia-microscope-viewport"
+                  onClick={() =>
+                    setLightboxPlate({
+                      file: 'gia-girdle-microscope.jpg',
+                      tag: `150× OPTICAL MICROSCOPE · ${activeCert.giaReportNumber}`,
+                      title: `Laser Girdle Inscription — ${activeCert.lotTitle}`,
+                      caption: `Inscribed Girdle ID: ${activeCert.girdleInscription} · Origin: ${activeCert.originMine}`,
+                    })
+                  }
+                  title="Click to enlarge 2K 150x Gemological Microscope Plate"
+                >
+                  <img
+                    src={getMediaUrl('gia-girdle-microscope.jpg')}
+                    alt="150x Gemological Microscope View of Laser-Inscribed Diamond Girdle"
+                    className="gia-microscope-img"
+                  />
+                  <div className="visual-viewport-overlay-top">
+                    <span className="visual-plate-tag">150× DARKFIELD OPTICS · 100 µm SCALE</span>
+                    <span className="visual-zoom-pill">
+                      <ArrowUpRight size={12} />
+                      <span>2K Plate</span>
+                    </span>
+                  </div>
+                </div>
+
+                <div className="gia-microscope-telemetry">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span className="section-eyebrow" style={{ marginBottom: 0 }}>
+                      Active Optical Loupe Telemetry
+                    </span>
+                    <span className="gia-verified-pill">COLD-LASER VERIFIED</span>
+                  </div>
+                  <h3 style={{ fontFamily: 'var(--serif)', fontSize: '1.65rem', fontWeight: 300 }}>
+                    {activeCert.lotTitle}
+                  </h3>
+                  <div className="girdle-inscription-readout">
+                    <span>LASER GIRDLE ID:</span>
+                    <strong>{activeCert.girdleInscription}</strong>
+                  </div>
+                  <div className="piece-tech-grid" style={{ marginBottom: '0.75rem' }}>
+                    <div className="piece-tech-item">
+                      <div className="piece-tech-label">GIA Report &amp; Grade</div>
+                      <div className="piece-tech-val">
+                        {activeCert.giaReportNumber} · {activeCert.colorGrade} / {activeCert.clarityGrade}
+                      </div>
+                    </div>
+                    <div className="piece-tech-item">
+                      <div className="piece-tech-label">Mine Provenance</div>
+                      <div className="piece-tech-val">{activeCert.originMine}</div>
+                    </div>
+                  </div>
+                  <div className="gia-hash" style={{ marginTop: 0 }}>
+                    SHA-256 Registry Hash: {activeCert.provenanceHash}
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="gia-toolbar">
               <div style={{ position: 'relative', flex: 1 }}>
                 <input
@@ -1343,7 +1865,12 @@ export default function App() {
 
             <div className="gia-grid">
               {certificates.map((cert) => (
-                <div key={cert.id} className="gia-card">
+                <div
+                  key={cert.id}
+                  className={`gia-card ${selectedCertId === cert.id ? 'active-cert' : ''}`}
+                  onClick={() => setSelectedCertId(cert.id)}
+                  style={{ cursor: 'pointer' }}
+                >
                   <div className="gia-card-top">
                     <div>
                       <span className="gia-report-num">{cert.giaReportNumber}</span>
@@ -1351,7 +1878,9 @@ export default function App() {
                         Girdle Laser ID: {cert.girdleInscription}
                       </div>
                     </div>
-                    <span className="gia-verified-pill">SHA-256 Verified</span>
+                    <span className="gia-verified-pill">
+                      {selectedCertId === cert.id ? 'Inspecting 150×' : 'SHA-256 Verified'}
+                    </span>
                   </div>
 
                   <h4 className="gia-lot-title">{cert.lotTitle}</h4>
@@ -1759,6 +2288,49 @@ export default function App() {
             ) : (
               <div style={{ color: 'var(--text-muted)' }}>Loading Atelier OS telemetry...</div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ─── FULL-SCREEN 2K OPTICAL PLATE LIGHTBOX MODAL ─── */}
+      {lightboxPlate && (
+        <div className="lightbox-backdrop" onClick={() => setLightboxPlate(null)} role="dialog" aria-modal="true">
+          <div className="lightbox-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="lightbox-header">
+              <div>
+                <span className="visual-plate-tag">{lightboxPlate.tag}</span>
+                <h3 className="lightbox-title">{lightboxPlate.title}</h3>
+              </div>
+              <button type="button" className="nav-pill-btn" onClick={() => setLightboxPlate(null)}>
+                <X size={16} />
+                <span>Close 2K Loupe</span>
+              </button>
+            </div>
+
+            <div className="lightbox-stage">
+              <img
+                src={getMediaUrl(lightboxPlate.file)}
+                alt={lightboxPlate.title}
+                className="lightbox-main-img"
+              />
+            </div>
+
+            <p className="lightbox-caption">{lightboxPlate.caption}</p>
+
+            {/* 12-Plate Filmstrip Switcher */}
+            <div className="lightbox-filmstrip">
+              {ATELIER_GALLERY_PLATES.map((plate) => (
+                <button
+                  key={plate.id}
+                  type="button"
+                  className={`lightbox-thumb-btn ${lightboxPlate.file === plate.file ? 'active' : ''}`}
+                  onClick={() => setLightboxPlate(plate)}
+                  title={plate.title}
+                >
+                  <img src={getMediaUrl(plate.file)} alt={plate.title} loading="lazy" />
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       )}
