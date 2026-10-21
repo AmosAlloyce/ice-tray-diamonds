@@ -56,6 +56,16 @@ function getMediaUrl(filename) {
 
 export const ATELIER_GALLERY_PLATES = [
   {
+    id: 'plate-motion-film',
+    type: 'video',
+    file: 'optical-dispersion-motion.mp4',
+    poster: 'piece-05-medallion.jpg',
+    tag: '1080P MOTION FILM · ZERO-GRAVITY SCINTILLATION',
+    title: 'Optical Dispersion & Zero-Gravity Deconstruction Film',
+    caption:
+      'Studio motion study capturing 0.044 spectral diamond fire as all five silhouettes spin and deconstruct into 384 floating components.',
+  },
+  {
     id: 'plate-vault',
     file: 'vault-box.jpg',
     tag: 'COMPLETE PARURE · PRESENTATION VAULT',
@@ -183,11 +193,14 @@ export default function App() {
   const [editions, setEditions] = useState([]);
   const [certificates, setCertificates] = useState([]);
   const [selectedPieceSlug, setSelectedPieceSlug] = useState('glacial-tennis-bracelet');
-  const [pieceViewMode, setPieceViewMode] = useState('STUDIO'); // 'STUDIO' | 'SCALE' | 'GIRDLE'
-  const [configVisualMode, setConfigVisualMode] = useState('SELECTION'); // 'SELECTION' | 'SCALE' | 'METALLURGY' | 'ENGRAVING'
+  const [pieceViewMode, setPieceViewMode] = useState('STUDIO'); // 'STUDIO' | 'SCALE' | 'GIRDLE' | 'VIDEO'
+  const [configVisualMode, setConfigVisualMode] = useState('SELECTION'); // 'SELECTION' | 'SCALE' | 'VIDEO' | 'METALLURGY' | 'ENGRAVING'
   const [suitePreviewFile, setSuitePreviewFile] = useState('vault-box.jpg');
   const [selectedCertId, setSelectedCertId] = useState('lot-01');
   const [lightboxPlate, setLightboxPlate] = useState(null);
+  const [cinemaSlowMo, setCinemaSlowMo] = useState(false);
+  const [cinemaMuted, setCinemaMuted] = useState(true);
+  const cinemaVideoRef = useRef(null);
   const [drawerPiece, setDrawerPiece] = useState(null);
   const [adminOpen, setAdminOpen] = useState(false);
   const [adminData, setAdminData] = useState(null);
@@ -589,6 +602,7 @@ export default function App() {
           // Pre-warm the 12 2K studio, scale, vault & microscope plates in the background
           setTimeout(() => {
             ATELIER_GALLERY_PLATES.forEach((plate) => {
+              if (plate.type === 'video') return;
               const mediaImg = new Image();
               mediaImg.decoding = 'async';
               mediaImg.src = getMediaUrl(plate.file);
@@ -752,14 +766,24 @@ export default function App() {
         : activePiece?.media?.studioImage || 'piece-01-bracelet.jpg';
 
   const spotlightImageCaption =
-    pieceViewMode === 'SCALE'
-      ? activePiece?.media?.scaleCaption || 'Human Scale Reference'
-      : pieceViewMode === 'GIRDLE'
-        ? `150× Gemological Microscope Verification · Girdle ID: ${activePiece?.diamondLots?.[0]?.girdleInscription || 'GIA 2267849102'}`
-        : activePiece?.media?.studioCaption || '2K Studio Macro';
+    pieceViewMode === 'VIDEO'
+      ? '1080p Studio Motion Film · Real-Time Spectral Scintillation & Zero-Gravity Deconstruction'
+      : pieceViewMode === 'SCALE'
+        ? activePiece?.media?.scaleCaption || 'Human Scale Reference'
+        : pieceViewMode === 'GIRDLE'
+          ? `150× Gemological Microscope Verification · Girdle ID: ${activePiece?.diamondLots?.[0]?.girdleInscription || 'GIA 2267849102'}`
+          : activePiece?.media?.studioCaption || '2K Studio Macro';
 
   // Compute the active image & caption for the Bespoke Configurator stage
   const configStageData = (() => {
+    if (configVisualMode === 'VIDEO') {
+      return {
+        type: 'video',
+        file: 'optical-dispersion-motion.mp4',
+        badge: '1080P MOTION FILM · SPECTRAL FIRE',
+        caption: 'Continuous 24fps optical dispersion & zero-gravity deconstruction across all 5 silhouettes',
+      };
+    }
     if (configVisualMode === 'ENGRAVING') {
       return {
         file: 'engraving-macro.jpg',
@@ -967,6 +991,87 @@ export default function App() {
               </div>
             </div>
 
+            {/* 1080p Optical Scintillation & Zero-Gravity Deconstruction Cinema Showcase */}
+            <div className="cinema-showcase-card">
+              <div className="cinema-showcase-copy">
+                <div className="cinema-badge-row">
+                  <span className="cinema-live-badge">1080P MOTION STUDY · 24 FPS</span>
+                  <span className="cinema-dispersion-tag">0.044 SPECTRAL FIRE</span>
+                </div>
+                <h3 className="cinema-showcase-title">
+                  Zero-Gravity Parure Deconstruction &amp; Scintillation Film
+                </h3>
+                <p className="cinema-showcase-desc">
+                  Inspect how cryo-forged Pt 950 micro-links, pavé collets, and GIA D/VVS1 diamonds separate in
+                  zero-gravity suspension while refracting continuous spectral dispersion across all five suite pieces.
+                </p>
+                <div className="cinema-controls-row">
+                  <button
+                    type="button"
+                    className={`visual-pill-btn ${!cinemaSlowMo ? 'active' : ''}`}
+                    onClick={() => {
+                      setCinemaSlowMo(false);
+                      if (cinemaVideoRef.current) cinemaVideoRef.current.playbackRate = 1.0;
+                    }}
+                  >
+                    1.0× Real-Time
+                  </button>
+                  <button
+                    type="button"
+                    className={`visual-pill-btn ${cinemaSlowMo ? 'active' : ''}`}
+                    onClick={() => {
+                      setCinemaSlowMo(true);
+                      if (cinemaVideoRef.current) cinemaVideoRef.current.playbackRate = 0.5;
+                    }}
+                  >
+                    0.5× Slow-Motion Fire
+                  </button>
+                  <button
+                    type="button"
+                    className={`visual-pill-btn ${!cinemaMuted ? 'active' : ''}`}
+                    onClick={() => setCinemaMuted((prev) => !prev)}
+                  >
+                    {cinemaMuted ? 'Unmute Atelier Audio' : 'Audio Active'}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-outline-ice"
+                    style={{ padding: '0.42rem 0.85rem', fontSize: '0.68rem' }}
+                    onClick={() => setLightboxPlate(ATELIER_GALLERY_PLATES[0])}
+                  >
+                    <Sparkles size={12} />
+                    <span>Full-Screen Theatre</span>
+                  </button>
+                </div>
+              </div>
+
+              <div
+                className="cinema-video-frame"
+                onClick={() => setLightboxPlate(ATELIER_GALLERY_PLATES[0])}
+                title="Click to open full-screen 1080p motion study"
+              >
+                <video
+                  ref={cinemaVideoRef}
+                  src={getMediaUrl('optical-dispersion-motion.mp4')}
+                  poster={getMediaUrl('piece-05-medallion.jpg')}
+                  className="cinema-video-el"
+                  autoPlay
+                  loop
+                  muted={cinemaMuted}
+                  playsInline
+                />
+                <div className="visual-viewport-overlay-top">
+                  <span className="visual-plate-tag">
+                    {cinemaSlowMo ? '0.5× SLOW-MOTION SCINTILLATION' : 'LIVE 360° ZERO-G MOTION FILM'}
+                  </span>
+                  <span className="visual-zoom-pill">
+                    <ArrowUpRight size={12} />
+                    <span>Theatre</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
             {/* Interactive 5-Piece Selector Tabs with 2K Studio Thumbnails */}
             {pieces.length > 0 && (
               <>
@@ -1120,37 +1225,63 @@ export default function App() {
                           >
                             150× GIA Girdle
                           </button>
+                          <button
+                            type="button"
+                            className={`visual-pill-btn ${pieceViewMode === 'VIDEO' ? 'active' : ''}`}
+                            onClick={() => setPieceViewMode('VIDEO')}
+                          >
+                            Motion Film
+                          </button>
                         </div>
                       </div>
 
                       <div
                         className={`piece-visual-viewport ${pieceViewMode === 'SCALE' ? 'portrait-mode' : ''}`}
                         onClick={() =>
-                          setLightboxPlate({
-                            file: spotlightImageFile,
-                            tag: `PIECE ${activePiece.code} / 05 · ${pieceViewMode} VIEW`,
-                            title: `${activePiece.code}. ${activePiece.name}`,
-                            caption: spotlightImageCaption,
-                          })
+                          setLightboxPlate(
+                            pieceViewMode === 'VIDEO'
+                              ? ATELIER_GALLERY_PLATES[0]
+                              : {
+                                  type: 'image',
+                                  file: spotlightImageFile,
+                                  tag: `PIECE ${activePiece.code} / 05 · ${pieceViewMode} VIEW`,
+                                  title: `${activePiece.code}. ${activePiece.name}`,
+                                  caption: spotlightImageCaption,
+                                },
+                          )
                         }
-                        title="Click to inspect full 2K plate"
+                        title="Click to inspect full 2K plate or motion film"
                       >
-                        <img
-                          src={getMediaUrl(spotlightImageFile)}
-                          alt={`${activePiece.name} — ${pieceViewMode}`}
-                          className="piece-visual-img"
-                        />
+                        {pieceViewMode === 'VIDEO' ? (
+                          <video
+                            src={getMediaUrl('optical-dispersion-motion.mp4')}
+                            poster={getMediaUrl(activePiece.media?.studioImage || 'piece-01-bracelet.jpg')}
+                            className="piece-visual-img"
+                            autoPlay
+                            loop
+                            muted
+                            playsInline
+                          />
+                        ) : (
+                          <img
+                            src={getMediaUrl(spotlightImageFile)}
+                            alt={`${activePiece.name} — ${pieceViewMode}`}
+                            className="piece-visual-img"
+                          />
+                        )}
                         <div className="visual-viewport-overlay-top">
                           <span className="visual-plate-tag">
                             {pieceViewMode === 'SCALE'
                               ? `HUMAN SCALE · ${activePiece.media?.scaleLabel?.toUpperCase()}`
                               : pieceViewMode === 'GIRDLE'
                                 ? '150× GEMOLOGICAL MICROSCOPE'
-                                : `PIECE ${activePiece.code} · 2K STUDIO PLATE`}
+                                : pieceViewMode === 'VIDEO'
+                                  ? '1080P ZERO-G SCINTILLATION FILM'
+                                  : `PIECE ${activePiece.code} · 2K STUDIO PLATE`}
                           </span>
                           <span className="visual-zoom-pill">
                             <ArrowUpRight size={12} />
-                            <span>2K Loupe</span>
+                            <span>{pieceViewMode === 'VIDEO' ? '1080p Film' : '2K Loupe'}</span>
                           </span>
                         </div>
                         {pieceViewMode === 'GIRDLE' && (
@@ -1167,15 +1298,20 @@ export default function App() {
                           type="button"
                           className="visual-link-btn"
                           onClick={() =>
-                            setLightboxPlate({
-                              file: spotlightImageFile,
-                              tag: `PIECE ${activePiece.code} / 05 · ${pieceViewMode} VIEW`,
-                              title: `${activePiece.code}. ${activePiece.name}`,
-                              caption: spotlightImageCaption,
-                            })
+                            setLightboxPlate(
+                              pieceViewMode === 'VIDEO'
+                                ? ATELIER_GALLERY_PLATES[0]
+                                : {
+                                    type: 'image',
+                                    file: spotlightImageFile,
+                                    tag: `PIECE ${activePiece.code} / 05 · ${pieceViewMode} VIEW`,
+                                    title: `${activePiece.code}. ${activePiece.name}`,
+                                    caption: spotlightImageCaption,
+                                  },
+                            )
                           }
                         >
-                          Open 12-Plate Gallery
+                          Open 13-Asset Gallery
                         </button>
                       </div>
 
@@ -1577,30 +1713,50 @@ export default function App() {
                     >
                       Laser Hallmark
                     </button>
+                    <button
+                      type="button"
+                      className={`visual-pill-btn ${configVisualMode === 'VIDEO' ? 'active' : ''}`}
+                      onClick={() => setConfigVisualMode('VIDEO')}
+                    >
+                      Motion Film
+                    </button>
                   </div>
 
                   <div
                     className={`config-stage-viewport ${configVisualMode === 'SCALE' ? 'portrait-crop' : ''}`}
                     onClick={() =>
                       setLightboxPlate({
+                        type: configStageData.type || 'image',
                         file: configStageData.file,
                         tag: configStageData.badge,
                         title: liveQuote?.title || 'The Complete Ice Tray Parure',
                         caption: configStageData.caption,
                       })
                     }
-                    title="Click to open full 2K plate inspection"
+                    title="Click to open full 2K plate or motion inspection"
                   >
-                    <img
-                      src={getMediaUrl(configStageData.file)}
-                      alt={configStageData.badge}
-                      className="config-stage-img"
-                    />
+                    {configStageData.type === 'video' ? (
+                      <video
+                        src={getMediaUrl(configStageData.file)}
+                        poster={getMediaUrl('piece-05-medallion.jpg')}
+                        className="config-stage-img"
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                      />
+                    ) : (
+                      <img
+                        src={getMediaUrl(configStageData.file)}
+                        alt={configStageData.badge}
+                        className="config-stage-img"
+                      />
+                    )}
                     <div className="visual-viewport-overlay-top">
                       <span className="visual-plate-tag">{configStageData.badge}</span>
                       <span className="visual-zoom-pill">
                         <ArrowUpRight size={11} />
-                        <span>2K</span>
+                        <span>{configStageData.type === 'video' ? '1080p' : '2K'}</span>
                       </span>
                     </div>
                     {configVisualMode === 'ENGRAVING' && (
@@ -2308,16 +2464,28 @@ export default function App() {
             </div>
 
             <div className="lightbox-stage">
-              <img
-                src={getMediaUrl(lightboxPlate.file)}
-                alt={lightboxPlate.title}
-                className="lightbox-main-img"
-              />
+              {lightboxPlate.type === 'video' || lightboxPlate.file?.endsWith('.mp4') ? (
+                <video
+                  src={getMediaUrl(lightboxPlate.file)}
+                  poster={getMediaUrl(lightboxPlate.poster || 'piece-05-medallion.jpg')}
+                  className="lightbox-main-img"
+                  controls
+                  autoPlay
+                  loop
+                  playsInline
+                />
+              ) : (
+                <img
+                  src={getMediaUrl(lightboxPlate.file)}
+                  alt={lightboxPlate.title}
+                  className="lightbox-main-img"
+                />
+              )}
             </div>
 
             <p className="lightbox-caption">{lightboxPlate.caption}</p>
 
-            {/* 12-Plate Filmstrip Switcher */}
+            {/* 13-Asset Filmstrip Switcher (1 Motion Film + 12 2K Studio Plates) */}
             <div className="lightbox-filmstrip">
               {ATELIER_GALLERY_PLATES.map((plate) => (
                 <button
@@ -2327,7 +2495,12 @@ export default function App() {
                   onClick={() => setLightboxPlate(plate)}
                   title={plate.title}
                 >
-                  <img src={getMediaUrl(plate.file)} alt={plate.title} loading="lazy" />
+                  <img
+                    src={getMediaUrl(plate.type === 'video' ? plate.poster : plate.file)}
+                    alt={plate.title}
+                    loading="lazy"
+                  />
+                  {plate.type === 'video' && <span className="lightbox-thumb-video-tag">FILM</span>}
                 </button>
               ))}
             </div>
